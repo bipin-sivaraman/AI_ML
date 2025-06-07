@@ -1,9 +1,13 @@
 #!/usr/bin/env python3
 
 import math
+import re
 
 alert = '\033[91m'
 reset = '\033[0m'
+
+class DateError(Exception):
+    pass
 
 class ItemToPurchase:
     def __init__(self, name="none", price=0, qty=0):
@@ -65,7 +69,7 @@ class ShoppingCart(ItemToPurchase):
                 if item_to_purchase.item_qty != 0:
                     # Updating the item's quantity in cart.
                     self.cart_items[index].item_qty = item_to_purchase.item_qty
-                # Updating description is a stub. Will revisit before final submission.
+                # Updating item description.
                 if item_to_purchase.item_desc is not None:
                     self.cart_items[index].item_desc = item_to_purchase.item_desc
                 item_found = True
@@ -75,7 +79,7 @@ class ShoppingCart(ItemToPurchase):
         if not item_found:
             print(f'{alert}Item not found in cart. Nothing modified.{reset}')
 
-    def get_num_items_in_cart(self):
+    def __get_num_items_in_cart(self):
         """
         Returns quantity of all items in cart.
         """
@@ -85,7 +89,7 @@ class ShoppingCart(ItemToPurchase):
             item_count +=  item.item_qty 
         return item_count
 
-    def get_cost_of_cart(self):
+    def __get_cost_of_cart(self):
         """
         Determines and returns the total cost of items in cart.
         """
@@ -103,9 +107,9 @@ class ShoppingCart(ItemToPurchase):
         """
 
         print(f"{self.customer_name}'s Shopping Cart - {self.current_date }")
-        print(f'Number of Items: {self.get_num_items_in_cart()}')
+        print(f'Number of Items: {self.__get_num_items_in_cart()}')
 
-        print(f'Total: ${self.get_cost_of_cart():.0f}')
+        print(f'Total: ${self.__get_cost_of_cart():.0f}')
 
         if not self.cart_items:
             print(f'{alert}SHOPPING CART IS EMPTY{reset}')
@@ -117,7 +121,6 @@ class ShoppingCart(ItemToPurchase):
 
         print(f"{self.customer_name}'s Shopping Cart - {self.current_date }")
         print('Item Descriptions')
-        # Below lines are stub and will be reviewed before final submission.
         for item in self.cart_items:
             print(f'{item.item_name}: {item.item_desc}')
 
@@ -142,42 +145,32 @@ def print_menu(shopping_cart):
 
         if option.lower() == 'a':
             # Prompt the user for item details
-            item_name = input("\nEnter the item name: ")
+            print(f"\n{'*'*20} ADD ITEM TO CART {'*'*20}")
+            item.item_name = input("\nEnter the item name: ")
+            item.item_desc = input('Enter the item description:')
             price = input("Enter the item price: ")
             qty = input("Enter the item quantity: ")
 
-            item.item_name = item_name
+            #item.item_name = item_name
             item.item_price = float(price) if price else 0
             item.item_qty = int(qty) if qty else 0
-
-            # This is a stub and will be revisited for final project.
-            description = {'Nike Romaleos': 'Volt color, Weightlifting shoes',
-                           'Chocolate Chips': 'Semi-sweet',
-                           'Powerbeats 2 Headphones': 'Bluetooth headphones'}
-            item.item_desc = description[item_name]
 
             shopping_cart.add_item(item)
 
         elif option.lower() == 'r':
+            print(f"\n{'*'*20} REMOVE ITEM FROM CART {'*'*20}")
             # Prompt the user for item to be removed.
-            item_name = input("\nEnter the item name: ")   
+            item_name = input("\nEnter name of item to remove: ")
             shopping_cart.remove_item(item_name)
 
         elif option.lower() == 'c':
+            print(f"\n{'*'*20} CHANGE ITEM QUANTITY {'*'*20}")
             # Prompt the user for item details
             name = input("\nEnter the item name: ")
-            price = input("Enter the item price: ")
-            qty = input("Enter the item quantity: ")
+            qty = input("Enter the new quantity: ")
 
             item.item_name = name
-            item.item_price = float(price) if price else 0
             item.item_qty = int(qty) if qty else 0
-
-            # This is a stub and will be revisited for final project.
-            description = {'Nike Romaleos': 'Blue color, Weightlifting shoes',
-                           'Chocolate Chips': 'mild-sweet',
-                           'Powerbeats 2 Headphones': 'Wireless Bluetooth headphones'}
-            item.item_desc = description[name] if not None else None
 
             # Change item quantity.        
             shopping_cart.modify_item(item)
@@ -195,12 +188,30 @@ def print_menu(shopping_cart):
         elif option.lower() == 'q':
             break
 
-if __name__ == "__main__":
-    # Initialize an empty shopping cart (list of dictionaries)
-    cart = ShoppingCart()
+def validate_date(current_date):
+    """
+        Checks if the date is entered in the correct format, ex: February 1, 2020
+    """
     
-    # TODO: Revisit before final project submission.
-    cart.customer_name = "John Doe"
-    cart.current_date = "February 1, 2020"
+    return bool(re.match(r'^([A-Za-z]+) (\d{1,2}), (\d{4})$', current_date))
 
-    print_menu(cart)
+if __name__ == "__main__":
+    try:
+        # Initialize an empty shopping cart (list of dictionaries)
+        cart = ShoppingCart()
+
+        cart.customer_name = input("Enter customer's name: ")
+
+        current_date = input("Enter today's date: ")
+        # Validate the date to ensure it follows the format: February 1, 2020
+        if not validate_date(current_date):
+            raise DateError("Invalid date format.")
+
+        cart.current_date = current_date
+
+        print(f'Customer name: {cart.customer_name}')
+        print(f"Today's date: {cart.current_date}")
+
+        print_menu(cart)
+    except (Exception, DateError) as e:
+        print(f'Error: {e}')
